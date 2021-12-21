@@ -2614,12 +2614,14 @@ MonoBehaviour:
   layerMask:
     serializedVersion: 2
     m_Bits: 4
+  groundNormal: {x: 0, y: 0, z: 0}
   moveBuffer: {x: 0, y: 0, z: 0}
   dot: 0
   stepOffset: 1
   scanRadius: 1
   scanForwardsStep: 1
-  ascendSpeed: 2
+  ascendSpeed: 1
+  canStep: 0
   cube: {fileID: 1251488168}
   playerToPoint: {x: 0, y: 0, z: 0}
 --- !u!23 &1822786731

@@ -9,6 +9,8 @@ public class CCEnhanced : MonoBehaviour
     public CharacterController player;
     public LayerMask layerMask;
     Vector3 buffer;
+    public Vector3 groundNormal;
+    RaycastHit groundDetection;
     bool isStepping;
     public Vector3 moveBuffer;
     public float dot;
@@ -20,7 +22,7 @@ public class CCEnhanced : MonoBehaviour
     public float scanRadius;
     public float scanForwardsStep;
     public float ascendSpeed;
-
+    public bool canStep;
     public GameObject cube;
     public Vector3 playerToPoint;
     // Start is called before the first frame update
@@ -51,7 +53,12 @@ public class CCEnhanced : MonoBehaviour
         moveBuffer = new Vector3(move.x, moveY, move.z);
         player.Move(moveBuffer);
         hits = Physics.CapsuleCastAll(transform.position + Vector3.up * player.height/2 - new Vector3(move.x, 0, move.z).normalized * scanForwardsStep, transform.position + Vector3.up * player.height/2 + new Vector3(move.x, 0, move.z).normalized * scanForwardsStep, player.radius * scanRadius, Vector3.down, player.height*2, ~layerMask);
-        Physics.SphereCast(transform.position + Vector3.up * player.height/2 + playerToPoint.normalized * scanForwardsStep, player.radius, Vector3.down, out hitLast, player.height, ~layerMask);  
+        Physics.SphereCast(transform.position + Vector3.up * player.height/2 + playerToPoint.normalized * scanForwardsStep, player.radius, Vector3.down, out hitLast, player.height, ~layerMask);
+        Physics.SphereCast(transform.position, player.radius * 0.2f, Vector3.down, out groundDetection, player.height + stepOffset, ~layerMask);  
+        groundNormal = groundDetection.normal;
+        Vector3 slopeDetector = hitLast.point - groundDetection.point;
+        if(Vector3.Dot(groundNormal, slopeDetector) < 0.05f && Vector3.Dot(groundNormal, slopeDetector) > -0.05f) canStep = false;
+        else canStep = true;
         if(lastHits != null)if(!hits.SequenceEqual(lastHits)){
             change = true;
         }else{
@@ -65,7 +72,7 @@ public class CCEnhanced : MonoBehaviour
                 Vector3 b = Vector3.Scale(hit.point - transform.position, new Vector3(1, 0, 1)).normalized;
                 DrawVector(transform.position, a, 10, Color.yellow);
                 DrawVector(transform.position, b, 10, Color.green); 
-                DrawVector(hit.point, Vector3.up, 10, Color.cyan);
+                DrawVector(hit.point, hit.normal, 10, Color.cyan);
                 dot = Vector3.Dot(a, b);
                 if(dot > 0.9f && (1-(transform.position.y - hit.point.y)) <= stepOffset && (1-(transform.position.y - hit.point.y)) > 0){
                     Hitpoints.Add(hit.point);
@@ -73,7 +80,7 @@ public class CCEnhanced : MonoBehaviour
                 }
             }
         }
-            if(Hitpoints.Count > 0) 
+            if(Hitpoints.Count > 0 && canStep) 
             {   
                 foreach(Vector3 hit1 in Hitpoints){
                     dot = Vector3.Dot(Vector3.Scale(moveBuffer.normalized, new Vector3(1, 0, 1)).normalized, Vector3.Scale(hit1 - transform.position, new Vector3(1, 0, 1)).normalized);
