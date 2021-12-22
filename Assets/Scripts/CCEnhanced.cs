@@ -11,6 +11,7 @@ public class CCEnhanced : MonoBehaviour
     Vector3 buffer;
     public Vector3 groundNormal;
     RaycastHit groundDetection;
+    RaycastHit stepDetection;
     bool isStepping;
     public Vector3 moveBuffer;
     public float dot;
@@ -23,6 +24,7 @@ public class CCEnhanced : MonoBehaviour
     public float scanForwardsStep;
     public float ascendSpeed;
     public bool canStep;
+    public bool isStair;
     public GameObject cube;
     public Vector3 playerToPoint;
     // Start is called before the first frame update
@@ -53,10 +55,15 @@ public class CCEnhanced : MonoBehaviour
         moveBuffer = new Vector3(move.x, moveY, move.z);
         player.Move(moveBuffer);
         hits = Physics.CapsuleCastAll(transform.position + Vector3.up * player.height/2 - new Vector3(move.x, 0, move.z).normalized * scanForwardsStep, transform.position + Vector3.up * player.height/2 + new Vector3(move.x, 0, move.z).normalized * scanForwardsStep, player.radius * scanRadius, Vector3.down, player.height*2, ~layerMask);
-        Physics.SphereCast(transform.position + Vector3.up * player.height/2 + playerToPoint.normalized * scanForwardsStep, player.radius, Vector3.down, out hitLast, player.height, ~layerMask);
+        Physics.SphereCast(transform.position + Vector3.up * player.height/2 + playerToPoint.normalized * scanForwardsStep, player.radius, Vector3.down, out hitLast, player.height*2, ~layerMask);
         Physics.SphereCast(transform.position, player.radius * 0.2f, Vector3.down, out groundDetection, player.height + stepOffset, ~layerMask);  
         groundNormal = groundDetection.normal;
         Vector3 slopeDetector = hitLast.point - groundDetection.point;
+        Physics.Raycast(groundDetection.point, hitLast.point - groundDetection.point, out stepDetection, 10000, ~layerMask);
+        if(Mathf.Abs(Vector3.Dot(stepDetection.normal, hitLast.normal)) < 0.9f) isStair = true;
+        else isStair = false;
+        DrawVector(hitLast.point + Vector3.right * 0.01f, hitLast.normal, 10, Color.magenta);
+        DrawVector(stepDetection.point, stepDetection.normal, 10, Color.red);
         if(Vector3.Dot(groundNormal, slopeDetector) < 0.05f && Vector3.Dot(groundNormal, slopeDetector) > -0.05f) canStep = false;
         else canStep = true;
         if(lastHits != null)if(!hits.SequenceEqual(lastHits)){
@@ -80,7 +87,10 @@ public class CCEnhanced : MonoBehaviour
                 }
             }
         }
-            if(Hitpoints.Count > 0 && canStep) 
+            if(Hitpoints.Count > 0){
+                foreach(Vector3 hit1 in Hitpoints) playerToPoint = Vector3.Scale(new Vector3(1, 0, 1), hit1 - transform.position);
+            }
+            if(Hitpoints.Count > 0 && canStep && isStair) 
             {   
                 foreach(Vector3 hit1 in Hitpoints){
                     dot = Vector3.Dot(Vector3.Scale(moveBuffer.normalized, new Vector3(1, 0, 1)).normalized, Vector3.Scale(hit1 - transform.position, new Vector3(1, 0, 1)).normalized);
@@ -88,8 +98,7 @@ public class CCEnhanced : MonoBehaviour
                         buffer = new Vector3(0, (1-(transform.position.y - hit1.y)), 0);
                         Vector3 difference = Lerp3D(ref buffer, player.velocity.magnitude* ascendSpeed * Time.deltaTime);
                         transform.position += difference;
-                    }
-                    playerToPoint = Vector3.Scale(new Vector3(1, 0, 1), hit1 - transform.position);
+                    }                    
                 }
                 isStepping = true;
             }else{
