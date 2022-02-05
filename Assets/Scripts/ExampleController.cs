@@ -30,14 +30,14 @@ public class ExampleController : MonoBehaviour
         cameraRotation += new Vector3(-Input.GetAxis("Mouse Y"), Input.GetAxis("Mouse X"), 0) * mouseSensitivity;
         camera.transform.eulerAngles = cameraRotation;
         if(player.isGrounded && Input.GetKeyDown(KeyCode.Space)){
-            player.BreakStep();
+            //player.BreakStep();
             velocity.y += jumpForce;
         }
     }
     void FixedUpdate(){
         velocity += wishDir * speed * Time.deltaTime;
         velocity *= 1/(drag+1);
-        velocity.y -= gravity;
+        if(!player.isGrounded)velocity.y -= gravity;
     }
     void OnControllerColliderHit(ControllerColliderHit hit){
         float momentum = Vector3.Dot(velocity, hit.normal);
